@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+*.log
+
+# fixture は素の状態だけを持つ。生成物はテストが毎回作り直す
+fixture/api/features/
+fixture/contract/*
+!fixture/contract/.gitkeep

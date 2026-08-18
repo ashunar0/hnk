@@ -1,0 +1,20 @@
+{
+  "name": "hnk-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "生成物が型検査を通ることを確かめるための最小プロジェクト。skill が指す参照実装も兼ねる",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.9.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260813.1",
+    "typescript": "^7.0.2"
+  }
+}

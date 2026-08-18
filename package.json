@@ -1,0 +1,37 @@
+{
+  "name": "@ashunar0/hnk",
+  "version": "0.0.0",
+  "description": "Hono backend kit. 規約に沿った feature 一式を生成する CLI.",
+  "type": "module",
+  "license": "MIT",
+  "author": "ashunar0",
+  "homepage": "https://github.com/ashunar0/hnk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashunar0/hnk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ashunar0/hnk/issues"
+  },
+  "keywords": [
+    "hono",
+    "cli",
+    "generator",
+    "scaffold",
+    "drizzle",
+    "backend"
+  ],
+  "bin": {
+    "hnk": "./bin/hnk.mjs"
+  },
+  "scripts": {
+    "test": "node scripts/test.mjs"
+  },
+  "files": [
+    "bin",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}
