@@ -6,7 +6,7 @@ import {
 import { wireDb } from "../../db";
 import type { AppEnv } from "../../env";
 import { validateBody } from "../../lib/validator";
-import { requireViewer } from "../../middleware/auth";
+import { requireAuth } from "../../middleware/auth";
 import { to__Entity__, toList } from "./presenter";
 import { wire__Name__ } from "./service";
 
@@ -15,8 +15,9 @@ export const __name__Route = new Hono<AppEnv>()
   // 一覧
   .get(
     "/",
+    requireAuth,
     async (c) => {
-      const viewerId = requireViewer(c);
+      const viewerId = c.get("authUserId");
       const db = wireDb(c.env.DB);
       const __name__ = wire__Name__(db);
 
@@ -28,9 +29,10 @@ export const __name__Route = new Hono<AppEnv>()
   // 1件
   .get(
     "/:id",
+    requireAuth,
     async (c) => {
       const id = c.req.param("id");
-      const viewerId = requireViewer(c);
+      const viewerId = c.get("authUserId");
       const db = wireDb(c.env.DB);
       const __name__ = wire__Name__(db);
 
@@ -42,10 +44,11 @@ export const __name__Route = new Hono<AppEnv>()
   // 作成
   .post(
     "/",
+    requireAuth,
     validateBody(create__Entity__InputSchema),
     async (c) => {
       const input = c.req.valid("json");
-      const viewerId = requireViewer(c);
+      const viewerId = c.get("authUserId");
       const db = wireDb(c.env.DB);
       const __name__ = wire__Name__(db);
 
@@ -57,11 +60,12 @@ export const __name__Route = new Hono<AppEnv>()
   // 更新
   .put(
     "/:id",
+    requireAuth,
     validateBody(update__Entity__InputSchema),
     async (c) => {
       const id = c.req.param("id");
       const input = c.req.valid("json");
-      const viewerId = requireViewer(c);
+      const viewerId = c.get("authUserId");
       const db = wireDb(c.env.DB);
       const __name__ = wire__Name__(db);
 
@@ -73,9 +77,10 @@ export const __name__Route = new Hono<AppEnv>()
   // 削除
   .delete(
     "/:id",
+    requireAuth,
     async (c) => {
       const id = c.req.param("id");
-      const viewerId = requireViewer(c);
+      const viewerId = c.get("authUserId");
       const db = wireDb(c.env.DB);
       const __name__ = wire__Name__(db);
 

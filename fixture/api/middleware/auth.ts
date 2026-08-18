@@ -1,5 +1,6 @@
-import type { Context, MiddlewareHandler } from "hono";
-import type { AppEnv } from "../env";
+import { createMiddleware } from "hono/factory";
+import type { MiddlewareHandler } from "hono";
+import type { AppEnv, AuthVariables } from "../env";
 import { ApiError } from "../lib/errors";
 
 /**
@@ -13,11 +14,18 @@ export const withViewer: MiddlewareHandler<AppEnv> = async (c, next) => {
   await next();
 };
 
-/** ログインを要求する。未ログインならここで 401 を投げる */
-export const requireViewer = (c: Context<AppEnv>): string => {
+/**
+ * ログインを要求する。チェーンに置くと、その先の handler で
+ * authUserId が string になる（viewerId は null を含んだまま）
+ */
+export const requireAuth = createMiddleware<{
+  Variables: AuthVariables & { authUserId: string };
+}>(async (c, next) => {
   const viewerId = c.get("viewerId");
   if (viewerId === null) {
     throw new ApiError("UNAUTHORIZED", 401, "ログインが必要です");
   }
-  return viewerId;
-};
+
+  c.set("authUserId", viewerId);
+  await next();
+});
