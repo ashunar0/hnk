@@ -3,17 +3,13 @@ import type {
   Update__Entity__Input,
 } from "@contract/__name__/type";
 import type { Db } from "../../db";
-import { ApiError } from "../../lib/errors";
+import { forbidden, notFound } from "../../lib/errors";
 import type {
   __Entity__Row,
   __Entity__UpdateValues,
   __Name__Repository,
 } from "./repository";
 import { __name__Repository } from "./repository";
-
-const notFound = () => new ApiError("NOT_FOUND", 404, "対象が見つかりません");
-const forbidden = () =>
-  new ApiError("FORBIDDEN", 403, "この操作は許可されていません");
 
 export function __name__Service(repo: __Name__Repository) {
   const load = async (id: string): Promise<__Entity__Row> => {

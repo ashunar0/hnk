@@ -21,6 +21,23 @@ export class ApiError extends HTTPException {
   }
 }
 
+/**
+ * よく投げる失敗。コードとステータスの対応をここだけで決めるので、
+ * NOT_FOUND に 400 を添えるような取り違えが書けなくなる。
+ * 仕様が文言を決めているときだけ message を渡す
+ */
+export const unauthorized = (message = "ログインが必要です") =>
+  new ApiError("UNAUTHORIZED", 401, message);
+
+export const forbidden = (message = "この操作は許可されていません") =>
+  new ApiError("FORBIDDEN", 403, message);
+
+export const notFound = (message = "対象が見つかりません") =>
+  new ApiError("NOT_FOUND", 404, message);
+
+export const conflict = (message: string) =>
+  new ApiError("CONFLICT", 409, message);
+
 /** 全ての失敗の唯一の出口 */
 export const onError: ErrorHandler = (err, c) => {
   if (err instanceof ApiError) {
