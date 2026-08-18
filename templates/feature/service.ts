@@ -4,6 +4,7 @@ import type {
 } from "@contract/__name__/type";
 import type { Db } from "../../db";
 import { forbidden, notFound } from "../../lib/errors";
+import { loadById } from "../../lib/repository";
 import type {
   __Entity__Row,
   __Entity__UpdateValues,
@@ -12,12 +13,6 @@ import type {
 import { __name__Repository } from "./repository";
 
 export function __name__Service(repo: __Name__Repository) {
-  const load = async (id: string): Promise<__Entity__Row> => {
-    const row = await repo.findById(id);
-    if (row === null) throw notFound();
-    return row;
-  };
-
   return {
     // 一覧。自分のものだけ、更新の新しい順
     async listMine(ownerId: string): Promise<__Entity__Row[]> {
@@ -26,7 +21,7 @@ export function __name__Service(repo: __Name__Repository) {
 
     /** 他人のものは、在ることも知らせない */
     async get(id: string, viewerId: string): Promise<__Entity__Row> {
-      const row = await load(id);
+      const row = await loadById(repo, id);
       if (row.ownerId !== viewerId) throw notFound();
 
       return row;
@@ -46,7 +41,7 @@ export function __name__Service(repo: __Name__Repository) {
         body: input.body,
       });
 
-      return load(id);
+      return loadById(repo, id);
     },
 
     /** 書き換えられるのは所有者だけ */
@@ -55,7 +50,7 @@ export function __name__Service(repo: __Name__Repository) {
       viewerId: string,
       input: Update__Entity__Input,
     ): Promise<__Entity__Row> {
-      const current = await load(id);
+      const current = await loadById(repo, id);
       if (current.ownerId !== viewerId) throw forbidden();
 
       const values: __Entity__UpdateValues = {
@@ -66,12 +61,12 @@ export function __name__Service(repo: __Name__Repository) {
 
       await repo.update(id, values);
 
-      return load(id);
+      return loadById(repo, id);
     },
 
     /** 消せるのは所有者だけ */
     async remove(id: string, viewerId: string): Promise<void> {
-      const current = await load(id);
+      const current = await loadById(repo, id);
       if (current.ownerId !== viewerId) throw forbidden();
 
       await repo.deleteById(id);
