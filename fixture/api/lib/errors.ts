@@ -38,6 +38,10 @@ export const notFound = (message = "対象が見つかりません") =>
 export const conflict = (message: string) =>
   new ApiError("CONFLICT", 409, message);
 
+/** 素通しさせると onError が既定の文言で 500 にする。文言を決めたいときだけ */
+export const internal = (message: string) =>
+  new ApiError("INTERNAL", 500, message);
+
 /** 全ての失敗の唯一の出口 */
 export const onError: ErrorHandler = (err, c) => {
   if (err instanceof ApiError) {
