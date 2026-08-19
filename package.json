@@ -29,7 +29,8 @@
   },
   "files": [
     "bin",
-    "templates"
+    "templates",
+    "fixture/api"
   ],
   "engines": {
     "node": ">=20"

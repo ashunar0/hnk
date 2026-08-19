@@ -95,6 +95,7 @@ USAGE
   hnk <command> [options]
 
 COMMANDS
+  init                        土台を置く（lib / db / middleware / アプリ入口）
   g, generate <type> <name>   規約に沿ったコードを生成する
                               type: feature
 
@@ -103,7 +104,8 @@ OPTIONS
   -v, --version               バージョンを表示
 
 EXAMPLES
-  hnk g feature invoice
+  hnk init
+  hnk g feature invoices
 `;
 
 // ---------- commands ----------
@@ -143,6 +145,54 @@ async function mount(rootDir, name, words) {
   await writeFile(path, lines.join("\n"));
 
   return { done: true, path: relative(CWD, path) };
+}
+
+/**
+ * 土台を置く。中身は fixture/api そのもので、別のテンプレートは持たない。
+ * 二重に持つと必ず片方が古くなり、fixture は tsc が守っているほうだから
+ */
+const APP_FILES = [
+  "db/index.ts",
+  "env.ts",
+  "index.ts",
+  "lib/errors.ts",
+  "lib/repository.ts",
+  "lib/validator.ts",
+  "middleware/auth.ts",
+];
+
+async function init() {
+  const dirs = await roots();
+  const created = [];
+  const skipped = [];
+
+  for (const rel of APP_FILES) {
+    const outPath = resolve(CWD, dirs.api, rel);
+    if (await exists(outPath)) {
+      skipped.push(relative(CWD, outPath));
+      continue;
+    }
+
+    const body = await readFile(resolve(PKG_ROOT, "fixture/api", rel), "utf8");
+    await mkdir(dirname(outPath), { recursive: true });
+    await writeFile(outPath, body);
+    created.push(relative(CWD, outPath));
+  }
+
+  for (const rel of [dirs.contract, dirs.web]) {
+    await mkdir(resolve(CWD, rel), { recursive: true });
+  }
+
+  for (const p of created) ok(`created  ${p}`);
+  for (const p of skipped) warn(`skipped  ${p} (既にあります)`);
+
+  if (created.length === 0) return;
+
+  log("");
+  log("残りは手で用意してください:");
+  log(`  tsconfig の paths に @contract/* → ${dirs.contract}/*、@/* → ${dirs.web}/*`);
+  log("  バンドラの resolve.alias に同じ 2 本（1 デプロイ単位のときは両方に要る）");
+  log("  Env の束縛（wrangler types など）");
 }
 
 async function generateFeature(name) {
@@ -226,6 +276,9 @@ async function main() {
   }
 
   switch (command) {
+    case "init":
+      await init();
+      break;
     case "g":
     case "generate":
       await generate(rest);

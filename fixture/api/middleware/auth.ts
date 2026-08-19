@@ -6,8 +6,8 @@ import { unauthorized } from "../lib/errors";
 /**
  * 閲覧者を文脈に積む。未ログインでも通す。
  *
- * 本物のプロジェクトでは features/auth/ が cookie のセッションを解いて渡す。
- * fixture は型検査しかしないので、認証提供元を持たず常に null を積む
+ * TODO: features/auth/ が cookie のセッションを解いて返すようになったら、
+ * その結果を積む。認証提供元がまだ無いあいだは常に null
  */
 export const withViewer: MiddlewareHandler<AppEnv> = async (c, next) => {
   c.set("viewerId", null);

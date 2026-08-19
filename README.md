@@ -24,13 +24,31 @@ npm i -g @ashunar0/hnk
 ## 使い方
 
 ```bash
-hnk g feature invoices
+hnk init                 # 土台。プロジェクトに 1 回だけ
+hnk g feature invoices   # feature 一式。何度でも
 ```
 
 feature 名は **camelCase の複数形**。ここから単数形・PascalCase・snake_case・kebab-case が
 すべて導出されるので、指定するのはこれ 1 つだけ。
 
 ## 生成されるもの
+
+### `hnk init` — 土台
+
+feature が import する側。**中身は `fixture/api/` そのもの**で、別のテンプレートは持たない。
+二重に持てば必ず片方が古くなり、`tsc` が守っているのは fixture のほうだから。
+
+```
+api/lib/errors.ts       ApiError と唯一の onError、失敗のファクトリ
+api/lib/validator.ts    応答せず throw する validator
+api/lib/repository.ts   loadById — 不在を失敗に変える
+api/db/index.ts         wireDb と Db 型
+api/env.ts              AppEnv
+api/middleware/auth.ts  withViewer / requireAuth
+api/index.ts            ルート 0 本のチェーン
+```
+
+### `hnk g feature <name>` — feature
 
 CRUD 5 本（一覧 / 1件 / 作成 / 更新 / 削除）を持つ feature 一式と、アプリ入口への mount。
 
