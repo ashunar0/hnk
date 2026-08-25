@@ -10,7 +10,7 @@ import type {
   __Entity__UpdateValues,
   __Name__Repository,
 } from "./repository";
-import { __name__Repository } from "./repository";
+import { wire__Name__Repository } from "./repository";
 
 export function __name__Service(repo: __Name__Repository) {
   return {
@@ -76,4 +76,4 @@ export function __name__Service(repo: __Name__Repository) {
 
 export type __Name__Service = ReturnType<typeof __name__Service>;
 
-export const wire__Name__ = (db: Db) => __name__Service(__name__Repository(db));
+export const wire__Name__ = (db: Db) => __name__Service(wire__Name__Repository(db));

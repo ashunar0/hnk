@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
-import type { Db } from "../../db";
+import { scopeTo } from "../../db";
+import type { Db, Scope } from "../../db";
 import { __snake__ } from "./table";
 
 /** 保存されている 1 行。応答の形とは別 */
@@ -16,10 +17,10 @@ export type __Name__Repository = {
   deleteById(id: string): Promise<void>;
 };
 
-export function __name__Repository(db: Db): __Name__Repository {
+function __name__Repository(scope: Scope<typeof __snake__>): __Name__Repository {
   return {
     async listByOwnerId(ownerId) {
-      return db
+      return scope.reads
         .select()
         .from(__snake__)
         .where(eq(__snake__.ownerId, ownerId))
@@ -27,7 +28,7 @@ export function __name__Repository(db: Db): __Name__Repository {
     },
 
     async findById(id) {
-      const rows = await db
+      const rows = await scope.reads
         .select()
         .from(__snake__)
         .where(eq(__snake__.id, id))
@@ -37,15 +38,18 @@ export function __name__Repository(db: Db): __Name__Repository {
     },
 
     async insert(row) {
-      await db.insert(__snake__).values(row);
+      await scope.insert(row);
     },
 
     async update(id, values) {
-      await db.update(__snake__).set(values).where(eq(__snake__.id, id));
+      await scope.update(values).where(eq(__snake__.id, id));
     },
 
     async deleteById(id) {
-      await db.delete(__snake__).where(eq(__snake__.id, id));
+      await scope.delete().where(eq(__snake__.id, id));
     },
   };
 }
+
+export const wire__Name__Repository = (db: Db) =>
+  __name__Repository(scopeTo(db, __snake__));
