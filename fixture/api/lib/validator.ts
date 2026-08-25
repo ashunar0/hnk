@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import type { ZodType } from "zod";
-import { ApiError } from "./errors";
+import { validationFailed } from "./errors";
 
 const FALLBACK = "入力内容を確認してください";
 
@@ -12,21 +12,13 @@ const FALLBACK = "入力内容を確認してください";
 export const validateBody = <T extends ZodType>(schema: T) =>
   zValidator("json", schema, (result) => {
     if (!result.success) {
-      throw new ApiError(
-        "VALIDATION_ERROR",
-        400,
-        result.error.issues[0]?.message ?? FALLBACK,
-      );
+      throw validationFailed(result.error.issues[0]?.message ?? FALLBACK);
     }
   });
 
 export const validateQuery = <T extends ZodType>(schema: T) =>
   zValidator("query", schema, (result) => {
     if (!result.success) {
-      throw new ApiError(
-        "VALIDATION_ERROR",
-        400,
-        result.error.issues[0]?.message ?? FALLBACK,
-      );
+      throw validationFailed(result.error.issues[0]?.message ?? FALLBACK);
     }
   });

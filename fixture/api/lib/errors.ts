@@ -10,8 +10,11 @@ export type ApiErrorCode =
   | "CONFLICT"
   | "INTERNAL";
 
-/** 失敗は必ず throw する。返り値にすると RPC の推論に混ざる */
-export class ApiError extends HTTPException {
+/**
+ * 失敗は必ず throw する。返り値にすると RPC の推論に混ざる。
+ * export しないので、feature 側は下のファクトリ経由でしか失敗を作れない
+ */
+class ApiError extends HTTPException {
   constructor(
     readonly code: ApiErrorCode,
     readonly httpStatus: ContentfulStatusCode,
@@ -20,6 +23,12 @@ export class ApiError extends HTTPException {
     super(httpStatus, { message });
   }
 }
+
+/**
+ * 検証の失敗。validator から使う
+ */
+export const validationFailed = (message: string) =>
+  new ApiError("VALIDATION_ERROR", 400, message);
 
 /**
  * よく投げる失敗。コードとステータスの対応をここだけで決めるので、
