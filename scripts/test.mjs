@@ -37,10 +37,11 @@ for (const name of FEATURES) {
 }
 
 run("pnpm", ["typecheck"], FIXTURE);
+run("pnpm", ["lint"], FIXTURE);
 
 // 入口だけ素に戻す。git status を汚さないため。
 // 生成された feature は読めるように残す（gitignore 済み）
 run("git", ["checkout", "--", "fixture/api/index.ts"], ROOT);
 
-console.log("\n\x1b[32m✓\x1b[0m 生成物が型検査を通りました");
+console.log("\n\x1b[32m✓\x1b[0m 生成物が型検査と依存の検査を通りました");
 console.log(`  読むなら ${FEATURES.map((n) => `fixture/api/features/${n}/`).join("  ")}`);

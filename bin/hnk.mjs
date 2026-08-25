@@ -161,6 +161,9 @@ const APP_FILES = [
   "middleware/auth.ts",
 ];
 
+/** プロジェクトルートに置くもの。lint は サーバールートの外から中を見る */
+const ROOT_FILES = [".oxlintrc.json", "hnk-lint-plugin.mjs"];
+
 async function init() {
   const dirs = await roots();
   const created = [];
@@ -179,6 +182,20 @@ async function init() {
     created.push(relative(CWD, outPath));
   }
 
+  for (const rel of ROOT_FILES) {
+    const outPath = resolve(CWD, rel);
+    if (await exists(outPath)) {
+      skipped.push(relative(CWD, outPath));
+      continue;
+    }
+
+    // 設定の中の api/ は、このプロジェクトのサーバールートに読み替える
+    const body = (await readFile(resolve(PKG_ROOT, "fixture", rel), "utf8"))
+      .replaceAll('"api/**/*.ts"', `"${dirs.api}/**/*.ts"`);
+    await writeFile(outPath, body);
+    created.push(relative(CWD, outPath));
+  }
+
   for (const rel of [dirs.contract, dirs.web]) {
     await mkdir(resolve(CWD, rel), { recursive: true });
   }
@@ -193,6 +210,7 @@ async function init() {
   log(`  tsconfig の paths に @contract/* → ${dirs.contract}/*、@/* → ${dirs.web}/*`);
   log("  バンドラの resolve.alias に同じ 2 本（1 デプロイ単位のときは両方に要る）");
   log("  Env の束縛（wrangler types など）");
+  log("  pnpm add -D oxlint（依存の向きの検査は oxlint 経由で走ります）");
 }
 
 async function generateFeature(name) {

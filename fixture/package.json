@@ -5,7 +5,8 @@
   "type": "module",
   "description": "生成物が型検査を通ることを確かめるための最小プロジェクト。skill が指す参照実装も兼ねる",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint ."
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.0",
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260813.1",
+    "oxlint": "^1.80.0",
     "typescript": "^7.0.2"
   }
 }

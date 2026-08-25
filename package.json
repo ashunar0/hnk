@@ -30,7 +30,9 @@
   "files": [
     "bin",
     "templates",
-    "fixture/api"
+    "fixture/api",
+    "fixture/.oxlintrc.json",
+    "fixture/hnk-lint-plugin.mjs"
   ],
   "engines": {
     "node": ">=20"
