@@ -22,6 +22,32 @@ const layerAt = (resolved, layer) =>
     new RegExp(`[/\\\\]features[/\\\\]([^/\\\\]+)[/\\\\]${layer}$`),
   )?.[1];
 
+/** route.ts か。features 配下のものだけを見る */
+const isRouteFile = (file) =>
+  /[/\\]features[/\\][^/\\]+[/\\]route\.ts$/.test(file);
+
+/**
+ * 式の根まで降りて `new Hono()` かどうかを見る。
+ * `new Hono<AppEnv>().get(...).post(...)` はチェーンなので、
+ * CallExpression と MemberExpression を剥がしてから判定する
+ */
+const rootsAtNewHono = (node) => {
+  let cur = node;
+  while (cur) {
+    if (cur.type === "CallExpression") cur = cur.callee;
+    else if (cur.type === "MemberExpression") cur = cur.object;
+    else break;
+  }
+  return cur?.type === "NewExpression" && cur.callee?.name === "Hono";
+};
+
+/** その export 宣言が Hono インスタンスそのものか */
+const isTheRouteExport = (node) =>
+  node.exportKind !== "type" &&
+  node.declaration?.type === "VariableDeclaration" &&
+  node.declaration.declarations.length === 1 &&
+  rootsAtNewHono(node.declaration.declarations[0].init);
+
 const foreignLayerRule = ({ layer, appliesTo, message }) => ({
   create(context) {
     const file = fileOf(context);
@@ -55,6 +81,32 @@ const plugin = {
       message: (t) =>
         `service が他 feature を連れている（${t}）。読みなら route から、書きなら相手の usecases/ から`,
     }),
+
+    /**
+     * route.ts の公開面は mount する 1 本だけ。ヘルパを export すると
+     * 他 feature がそこから掴めてしまい、mount チェーンが公開 API の一覧でなくなる
+     */
+    "route-exports-only-the-route": {
+      create(context) {
+        const file = fileOf(context);
+        if (!isRouteFile(file)) return {};
+
+        const report = (node) =>
+          context.report({
+            node,
+            message:
+              "route.ts が Hono インスタンス以外を export している。組み立てヘルパはこのファイル内に留める",
+          });
+
+        return {
+          ExportNamedDeclaration(node) {
+            if (!isTheRouteExport(node)) report(node);
+          },
+          ExportDefaultDeclaration: report,
+          ExportAllDeclaration: report,
+        };
+      },
+    },
 
     "lib-stays-portable": {
       create(context) {
