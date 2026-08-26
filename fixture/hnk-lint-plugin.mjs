@@ -48,6 +48,37 @@ const isTheRouteExport = (node) =>
   node.declaration.declarations.length === 1 &&
   rootsAtNewHono(node.declaration.declarations[0].init);
 
+const FUNCTIONS = new Set([
+  "FunctionDeclaration",
+  "FunctionExpression",
+  "ArrowFunctionExpression",
+]);
+
+/**
+ * 部分木を歩く。入れ子の関数には降りない——中の await や c.json は
+ * その関数のものであって、今見ているハンドラのものではない
+ */
+const walkOwnScope = (node, visit) => {
+  if (!node || typeof node.type !== "string") return;
+  visit(node);
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "parent") continue;
+    const children = Array.isArray(value) ? value : [value];
+    for (const child of children) {
+      if (!child || typeof child.type !== "string") continue;
+      if (FUNCTIONS.has(child.type)) continue;
+      walkOwnScope(child, visit);
+    }
+  }
+};
+
+/** `c.json(...)` の呼び出しか */
+const isCJson = (node) =>
+  node.type === "CallExpression" &&
+  node.callee?.type === "MemberExpression" &&
+  node.callee.object?.name === "c" &&
+  node.callee.property?.name === "json";
+
 const foreignLayerRule = ({ layer, appliesTo, message }) => ({
   create(context) {
     const file = fileOf(context);
@@ -104,6 +135,91 @@ const plugin = {
           },
           ExportDefaultDeclaration: report,
           ExportAllDeclaration: report,
+        };
+      },
+    },
+
+    /**
+     * 応答を組み立てながら待たない。ハンドラは「取り出す → 処理する → 返す」の 3 段で、
+     * await は 2 段目に閉じる。引数の中に混ざると、返す式が何を待っているのか読めなくなる
+     */
+    "no-await-in-call-arguments": {
+      create(context) {
+        if (!isRouteFile(fileOf(context))) return {};
+
+        // 入れ子の呼び出しでは同じ await が外側と内側の両方から見える
+        const reported = new Set();
+
+        return {
+          CallExpression(node) {
+            for (const arg of node.arguments) {
+              if (FUNCTIONS.has(arg.type)) continue; // ハンドラ本体は別の scope
+              walkOwnScope(arg, (inner) => {
+                if (inner.type === "AwaitExpression" && !reported.has(inner)) {
+                  reported.add(inner);
+                  context.report({
+                    node: inner,
+                    message:
+                      "呼び出しの引数の中で待っている。await は変数に受けてから渡す",
+                  });
+                }
+              });
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * 成功の形は 1 つ。空を早期 return で分けると 2 つの成功形が union になり、
+     * items: [] が never[] に推論されてフロント側のファイルにエラーが出る。
+     * 「空である理由」は分岐ではなく数——service が数を一緒に返し、presenter が訳す
+     */
+    "one-c-json-per-handler": {
+      create(context) {
+        if (!isRouteFile(fileOf(context))) return {};
+
+        const check = (node) => {
+          const found = [];
+          walkOwnScope(node.body, (inner) => {
+            if (isCJson(inner)) found.push(inner);
+          });
+          for (const extra of found.slice(1)) {
+            context.report({
+              node: extra,
+              message: `1 つのハンドラに c.json が ${found.length} 個ある。空である理由は分岐ではなく数で表す`,
+            });
+          }
+        };
+
+        return {
+          ArrowFunctionExpression: check,
+          FunctionExpression: check,
+        };
+      },
+    },
+
+    /**
+     * let は最後の逃げ道。契約型で注釈してあれば、2 つの成功形が黙って union に
+     * なることは無くなる。注釈の無い let は推論に任せているということ
+     */
+    "let-needs-a-contract-type": {
+      create(context) {
+        if (!isRouteFile(fileOf(context))) return {};
+
+        return {
+          VariableDeclaration(node) {
+            if (node.kind !== "let") return;
+            for (const declarator of node.declarations) {
+              if (!declarator.id?.typeAnnotation) {
+                context.report({
+                  node: declarator,
+                  message:
+                    "注釈の無い let。避けられないなら契約型を書く。書けるなら数で表して const にする",
+                });
+              }
+            }
+          },
         };
       },
     },

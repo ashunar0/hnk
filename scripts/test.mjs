@@ -23,6 +23,9 @@ const RULES = [
   "no-foreign-service-from-service",
   "lib-stays-portable",
   "route-exports-only-the-route",
+  "no-await-in-call-arguments",
+  "one-c-json-per-handler",
+  "let-needs-a-contract-type",
 ];
 
 function run(cmd, args, cwd) {
