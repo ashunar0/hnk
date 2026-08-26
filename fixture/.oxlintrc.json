@@ -15,7 +15,8 @@
         "hnk/route-exports-only-the-route": "error",
         "hnk/no-await-in-call-arguments": "error",
         "hnk/one-c-json-per-handler": "error",
-        "hnk/let-needs-a-contract-type": "error"
+        "hnk/let-needs-a-contract-type": "error",
+        "hnk/route-declares-auth": "error"
       }
     }
   ]

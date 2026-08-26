@@ -27,6 +27,7 @@ const RULES = [
   "no-await-in-call-arguments",
   "one-c-json-per-handler",
   "let-needs-a-contract-type",
+  "route-declares-auth",
 ];
 
 function run(cmd, args, cwd) {

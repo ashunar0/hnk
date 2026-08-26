@@ -27,3 +27,12 @@ export const requireAuth = createMiddleware<{
   c.set("authUserId", viewerId);
   await next();
 });
+
+/**
+ * 認証を要求しないことを明示する。何もしない。
+ *
+ * 置く意味は、opener の認証の引数を必ず 1 つにすること。書き忘れと「公開したい」が
+ * 「書いていない」という同じ姿で現れるのを分ける。grep すればこのアプリの
+ * 無認証エンドポイントが列挙できる
+ */
+export const allowAnonymous: MiddlewareHandler<AppEnv> = (_c, next) => next();

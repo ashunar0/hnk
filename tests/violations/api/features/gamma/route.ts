@@ -2,10 +2,11 @@
 import { Hono } from "hono";
 
 declare const toList: (rows: unknown) => unknown;
+declare const allowAnonymous: never;
 declare const gamma: { list(): Promise<unknown>; count(): Promise<number> };
 
 export const gammaRoute = new Hono()
-  .get("/", async (c) => {
+  .get("/", allowAnonymous, async (c) => {
     // let-needs-a-contract-type: 注釈が無い
     let total = 0;
     total = await gamma.count();

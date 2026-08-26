@@ -12,19 +12,14 @@ const featureOf = (file) => file.match(/[/\\]features[/\\]([^/\\]+)[/\\]/)?.[1];
 
 /** 相対 import だけ解決する。パッケージやエイリアスは対象外 */
 const resolveRelative = (file, specifier) =>
-  specifier.startsWith(".")
-    ? path.resolve(path.dirname(file), specifier)
-    : null;
+  specifier.startsWith(".") ? path.resolve(path.dirname(file), specifier) : null;
 
 /** 解決先が features/<name>/<layer> なら、その組を返す */
 const layerAt = (resolved, layer) =>
-  resolved?.match(
-    new RegExp(`[/\\\\]features[/\\\\]([^/\\\\]+)[/\\\\]${layer}$`),
-  )?.[1];
+  resolved?.match(new RegExp(`[/\\\\]features[/\\\\]([^/\\\\]+)[/\\\\]${layer}$`))?.[1];
 
 /** route.ts か。features 配下のものだけを見る */
-const isRouteFile = (file) =>
-  /[/\\]features[/\\][^/\\]+[/\\]route\.ts$/.test(file);
+const isRouteFile = (file) => /[/\\]features[/\\][^/\\]+[/\\]route\.ts$/.test(file);
 
 /**
  * 式の根まで降りて `new Hono()` かどうかを見る。
@@ -48,11 +43,7 @@ const isTheRouteExport = (node) =>
   node.declaration.declarations.length === 1 &&
   rootsAtNewHono(node.declaration.declarations[0].init);
 
-const FUNCTIONS = new Set([
-  "FunctionDeclaration",
-  "FunctionExpression",
-  "ArrowFunctionExpression",
-]);
+const FUNCTIONS = new Set(["FunctionDeclaration", "FunctionExpression", "ArrowFunctionExpression"]);
 
 /**
  * 部分木を歩く。入れ子の関数には降りない——中の await や c.json は
@@ -78,6 +69,15 @@ const isCJson = (node) =>
   node.callee?.type === "MemberExpression" &&
   node.callee.object?.name === "c" &&
   node.callee.property?.name === "json";
+
+const ROUTE_METHODS = new Set(["get", "post", "put", "patch", "delete", "options", "all"]);
+
+/**
+ * guard の名前。SKILL.md の「guard は要求するものの名前を持つ」に乗るので、
+ * 維持するリストを持たない。requireAdmin を足しても規則の変更は要らない
+ */
+const isGuardName = (node) =>
+  node?.type === "Identifier" && /^(require|allow)[A-Z]/.test(node.name);
 
 const foreignLayerRule = ({ layer, appliesTo, message }) => ({
   create(context) {
@@ -159,8 +159,7 @@ const plugin = {
                   reported.add(inner);
                   context.report({
                     node: inner,
-                    message:
-                      "呼び出しの引数の中で待っている。await は変数に受けてから渡す",
+                    message: "呼び出しの引数の中で待っている。await は変数に受けてから渡す",
                   });
                 }
               });
@@ -224,6 +223,56 @@ const plugin = {
       },
     },
 
+    /**
+     * 認証について決めたことを opener に書かせる。
+     *
+     * guard を落としても、handler が authUserId を読まなければ tsc は通る
+     * (読むなら never になって落ちる)。読まない handler —— 所有者で絞らない集計など ——
+     * では、書き忘れが無認証の公開として静かに出ていく。
+     *
+     * 公開したいときは allowAnonymous を書く。「書いていない」が
+     * 「忘れた」と「公開したい」の両方を意味するのをやめる。
+     * どちらが正しいかは機械には分からないが、grep allowAnonymous で列挙はできる
+     */
+    "route-declares-auth": {
+      create(context) {
+        if (!isRouteFile(fileOf(context))) return {};
+
+        return {
+          CallExpression(node) {
+            const method = node.callee?.property?.name;
+            if (node.callee?.type !== "MemberExpression") return;
+            if (!ROUTE_METHODS.has(method)) return;
+            // service の .get() などと区別する。チェーンの根が new Hono() のものだけ
+            if (!rootsAtNewHono(node.callee.object)) return;
+            if (node.arguments.length < 2) return; // path のみの形は扱わない
+
+            const guards = node.arguments.filter(isGuardName);
+
+            if (guards.length === 0) {
+              context.report({
+                node,
+                message: `.${method}() に認証の指定が無い。requireAuth か、公開なら allowAnonymous を置く`,
+              });
+              return;
+            }
+            if (guards.length > 1) {
+              context.report({
+                node: guards[1],
+                message: `.${method}() に認証の指定が ${guards.length} 個ある。1 つに決める`,
+              });
+            }
+            if (node.arguments[1] !== guards[0]) {
+              context.report({
+                node: guards[0],
+                message: `認証の指定は path の直後に置く。opener を縦に読めるようにするため`,
+              });
+            }
+          },
+        };
+      },
+    },
+
     "lib-stays-portable": {
       create(context) {
         const file = fileOf(context);
@@ -235,8 +284,7 @@ const plugin = {
             if (/[/\\](features|middleware|db)[/\\]/.test(resolved ?? "")) {
               context.report({
                 node,
-                message:
-                  "lib/ は次のプロジェクトへ cp -r できるもの。この依存があると持ち出せない",
+                message: "lib/ は次のプロジェクトへ cp -r できるもの。この依存があると持ち出せない",
               });
             }
           },
