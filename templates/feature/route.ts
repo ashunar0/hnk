@@ -11,9 +11,8 @@ import { to__Entity__, toList } from "./presenter";
 import { wire__Name__ } from "./service";
 
 export const __name__Route = new Hono<AppEnv>()
-  .use(requireAuth)
   // 一覧
-  .get("/", async (c) => {
+  .get("/", requireAuth, async (c) => {
     const viewerId = c.get("authUserId");
     const db = wireDb(c.env.DB);
     const __name__ = wire__Name__(db);
@@ -23,7 +22,7 @@ export const __name__Route = new Hono<AppEnv>()
     return c.json(toList(rows));
   })
   // 1件
-  .get("/:id", async (c) => {
+  .get("/:id", requireAuth, async (c) => {
     const id = c.req.param("id");
     const viewerId = c.get("authUserId");
     const db = wireDb(c.env.DB);
@@ -34,7 +33,7 @@ export const __name__Route = new Hono<AppEnv>()
     return c.json(to__Entity__(row));
   })
   // 作成
-  .post("/", validateBody(create__Entity__InputSchema), async (c) => {
+  .post("/", requireAuth, validateBody(create__Entity__InputSchema), async (c) => {
     const input = c.req.valid("json");
     const viewerId = c.get("authUserId");
     const db = wireDb(c.env.DB);
@@ -45,7 +44,7 @@ export const __name__Route = new Hono<AppEnv>()
     return c.json(to__Entity__(row));
   })
   // 更新
-  .put("/:id", validateBody(update__Entity__InputSchema), async (c) => {
+  .put("/:id", requireAuth, validateBody(update__Entity__InputSchema), async (c) => {
     const id = c.req.param("id");
     const input = c.req.valid("json");
     const viewerId = c.get("authUserId");
@@ -57,7 +56,7 @@ export const __name__Route = new Hono<AppEnv>()
     return c.json(to__Entity__(row));
   })
   // 削除
-  .delete("/:id", async (c) => {
+  .delete("/:id", requireAuth, async (c) => {
     const id = c.req.param("id");
     const viewerId = c.get("authUserId");
     const db = wireDb(c.env.DB);
