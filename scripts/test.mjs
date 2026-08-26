@@ -14,6 +14,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURE = resolve(ROOT, "fixture");
 const VIOLATIONS = resolve(ROOT, "tests/violations");
 const OXLINT = resolve(FIXTURE, "node_modules/.bin/oxlint");
+const PRETTIER = resolve(FIXTURE, "node_modules/.bin/prettier");
 
 const FEATURES = ["invoices", "signupRequests"];
 
@@ -69,6 +70,9 @@ async function lintGenerated() {
   }
   if (files.length === 0) throw new Error("生成物が見つからない");
   run(OXLINT, files, FIXTURE);
+  // 生成器が整形まで済ませていること。テンプレは事前に整形しておけない——
+  // Prettier は幅で折り返すので、名前を差し込んだ時点で改行位置が変わる
+  run(PRETTIER, ["--check", ...files], FIXTURE);
 }
 
 /**
@@ -103,5 +107,5 @@ lintViolations();
 // 生成された feature は読めるように残す（gitignore 済み）
 run("git", ["checkout", "--", "fixture/api/index.ts"], ROOT);
 
-console.log("\n\x1b[32m✓\x1b[0m 生成物が型検査と依存の検査を通り、依存の検査は違反に鳴りました");
+console.log("\n\x1b[32m✓\x1b[0m 生成物が型検査・整形・依存の検査を通り、依存の検査は違反に鳴りました");
 console.log(`  読むなら ${FEATURES.map((n) => `fixture/api/features/${n}/`).join("  ")}`);

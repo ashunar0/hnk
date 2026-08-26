@@ -1,7 +1,4 @@
-import type {
-  __Entity__Response,
-  List__Name__Response,
-} from "@contract/__name__/type";
+import type { __Entity__Response, List__Name__Response } from "@contract/__name__/type";
 import type { __Entity__Row } from "./repository";
 
 export function to__Entity__(row: __Entity__Row): __Entity__Response {

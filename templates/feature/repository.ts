@@ -28,11 +28,7 @@ function __name__Repository(scope: Scope<typeof __snake__>): __Name__Repository 
     },
 
     async findById(id) {
-      const rows = await scope.reads
-        .select()
-        .from(__snake__)
-        .where(eq(__snake__.id, id))
-        .limit(1);
+      const rows = await scope.reads.select().from(__snake__).where(eq(__snake__.id, id)).limit(1);
 
       return rows[0] ?? null;
     },
@@ -51,5 +47,4 @@ function __name__Repository(scope: Scope<typeof __snake__>): __Name__Repository 
   };
 }
 
-export const wire__Name__Repository = (db: Db) =>
-  __name__Repository(scopeTo(db, __snake__));
+export const wire__Name__Repository = (db: Db) => __name__Repository(scopeTo(db, __snake__));

@@ -32,7 +32,8 @@
     "templates",
     "fixture/api",
     "fixture/.oxlintrc.json",
-    "fixture/hnk-lint-plugin.mjs"
+    "fixture/hnk-lint-plugin.mjs",
+    "fixture/.prettierrc"
   ],
   "engines": {
     "node": ">=20"

@@ -12,12 +12,8 @@ export const __snake__ = sqliteTable(
     ownerId: text("owner_id").notNull(),
     title: text("title").notNull(),
     body: text("body").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .default(now)
-      .notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .default(now)
-      .notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(now).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(now).notNull(),
   },
   (table) => [
     index("__snake___owner_id_idx").on(table.ownerId),

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile, writeFile, mkdir, access } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -162,7 +163,7 @@ const APP_FILES = [
 ];
 
 /** プロジェクトルートに置くもの。lint は サーバールートの外から中を見る */
-const ROOT_FILES = [".oxlintrc.json", "hnk-lint-plugin.mjs"];
+const ROOT_FILES = [".oxlintrc.json", "hnk-lint-plugin.mjs", ".prettierrc"];
 
 async function init() {
   const dirs = await roots();
@@ -210,7 +211,35 @@ async function init() {
   log(`  tsconfig の paths に @contract/* → ${dirs.contract}/*、@/* → ${dirs.web}/*`);
   log("  バンドラの resolve.alias に同じ 2 本（1 デプロイ単位のときは両方に要る）");
   log("  Env の束縛（wrangler types など）");
-  log("  pnpm add -D oxlint（依存の向きの検査は oxlint 経由で走ります）");
+  log("  pnpm add -D oxlint prettier（依存の検査と整形はこの 2 つで走ります）");
+}
+
+/**
+ * 置換のあとに整形する。
+ *
+ * テンプレを事前に整形しておくことはできない——Prettier は幅で折り返すので、
+ * 名前を差し込んだ時点で正しい改行位置が変わる。短い名前なら 1 行に畳まれ、
+ * 長い名前なら展開される。だから「生成した直後は整形済み」を保つには、
+ * 差し込んだあとに通すしかない。
+ *
+ * Prettier はプロジェクトのものを使う。無ければ黙って飛ばす（hnk の依存にしない）
+ */
+async function formatGenerated(paths) {
+  let prettier;
+  try {
+    const mod = await import(createRequire(resolve(CWD, "package.json")).resolve("prettier"));
+    prettier = mod.resolveConfig ? mod : mod.default;
+  } catch {
+    return false;
+  }
+  if (!prettier?.format) return false;
+
+  for (const path of paths) {
+    const source = await readFile(path, "utf8");
+    const options = await prettier.resolveConfig(path);
+    await writeFile(path, await prettier.format(source, { ...options, filepath: path }));
+  }
+  return true;
 }
 
 async function generateFeature(name) {
@@ -223,6 +252,7 @@ async function generateFeature(name) {
   const dirs = await roots();
   const created = [];
   const skipped = [];
+  const written = [];
 
   for (const { tmpl, out } of FEATURE_FILES) {
     const outPath = resolve(CWD, out(dirs, name));
@@ -238,11 +268,17 @@ async function generateFeature(name) {
 
     await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, body);
+    written.push(outPath);
     created.push(relative(CWD, outPath));
   }
 
+  const formatted = await formatGenerated(written);
+
   for (const p of created) ok(`created  ${p}`);
   for (const p of skipped) warn(`skipped  ${p} (既にあります)`);
+  if (!formatted && created.length > 0) {
+    warn("prettier が見つからないので整形していません (pnpm add -D prettier)");
+  }
 
   if (created.length === 0) return;
 

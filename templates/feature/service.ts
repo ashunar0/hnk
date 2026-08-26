@@ -1,15 +1,8 @@
-import type {
-  Create__Entity__Input,
-  Update__Entity__Input,
-} from "@contract/__name__/type";
+import type { Create__Entity__Input, Update__Entity__Input } from "@contract/__name__/type";
 import type { Db } from "../../db";
 import { forbidden, notFound } from "../../lib/errors";
 import { loadById } from "../../lib/repository";
-import type {
-  __Entity__Row,
-  __Entity__UpdateValues,
-  __Name__Repository,
-} from "./repository";
+import type { __Entity__Row, __Entity__UpdateValues, __Name__Repository } from "./repository";
 import { wire__Name__Repository } from "./repository";
 
 export function __name__Service(repo: __Name__Repository) {
@@ -28,10 +21,7 @@ export function __name__Service(repo: __Name__Repository) {
     },
 
     // 作成
-    async create(
-      ownerId: string,
-      input: Create__Entity__Input,
-    ): Promise<__Entity__Row> {
+    async create(ownerId: string, input: Create__Entity__Input): Promise<__Entity__Row> {
       const id = crypto.randomUUID();
 
       await repo.insert({
