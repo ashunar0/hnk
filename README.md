@@ -1,5 +1,10 @@
 # hnk
 
+> [!IMPORTANT]
+> **This project has moved to [hono-kit](https://github.com/ashunar0/hono-kit)** (`pnpm create hnk`). This repository is archived.
+>
+> **このプロジェクトは [hono-kit](https://github.com/ashunar0/hono-kit) に移りました**（`pnpm create hnk`）。このリポジトリはアーカイブ済みです。
+
 Hono backend kit — 規約に沿った feature 一式を生成する CLI。
 
 > **作りかけです。** 規約そのものを実プロジェクトで検証しながら育てている途中なので、
